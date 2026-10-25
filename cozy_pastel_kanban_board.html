@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cozy Pastel Kanban Board 🌸</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Quicksand & Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                        display: ['Quicksand', 'sans-serif'],
+                    },
+                    colors: {
+                        cream: {
+                            50: '#FFFDF9',
+                            100: '#FDF8F0',
+                            200: '#F5ECE0',
+                        },
+                        cocoa: {
+                            400: '#9E8C85',
+                            600: '#6E5A53',
+                            800: '#4A3B36',
+                        },
+                        pastel: {
+                            sakura: '#FFE5EC',
+                            sakuraDark: '#FB6F92',
+                            sakuraText: '#9D3B56',
+                            matcha: '#E2F5EA',
+                            matchaDark: '#48B878',
+                            matchaText: '#236842',
+                            lavender: '#EFE9FF',
+                            lavenderDark: '#8B6FF2',
+                            lavenderText: '#493396',
+                            peach: '#FFEDE2',
+                            peachDark: '#F9844A',
+                            peachText: '#96441B',
+                            butter: '#FFF6D6',
+                            butterDark: '#F4B942',
+                            butterText: '#875F0D',
+                            sky: '#E3F2FD',
+                            skyDark: '#4EA8DE',
+                            skyText: '#1E5D88',
+                        }
+                    },
+                    boxShadow: {
+                        'cozy': '0 12px 32px -6px rgba(110, 90, 83, 0.06), 0 4px 14px -2px rgba(110, 90, 83, 0.04)',
+                        'cozy-hover': '0 18px 36px -6px rgba(251, 111, 146, 0.14), 0 8px 18px -4px rgba(110, 90, 83, 0.06)',
+                        'pill': '0 2px 6px rgba(110, 90, 83, 0.06)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #FFFDF9;
+            background-image: radial-gradient(#F0E4D7 1.6px, transparent 1.6px);
+            background-size: 28px 28px;
+            color: #4A3B36;
+            overflow-x: hidden;
+        }
+
+        /* Cute Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 9px;
+            height: 9px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FDF8F0;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #EBD8CE;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #DFC3B6;
+        }
+
+        /* Smooth Bouncy Drag & Drop Cues */
+        .task-card {
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, opacity 0.2s ease;
+        }
+        .task-card:hover {
+            transform: translateY(-4px);
+        }
+        .task-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.97) rotate(2deg);
+            box-shadow: 0 22px 30px -6px rgba(251, 111, 146, 0.2);
+        }
+        .column-dropzone {
+            transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+        }
+        .column-dropzone.drag-over {
+            background-color: rgba(255, 255, 255, 0.92) !important;
+            border-color: #FB6F92 !important;
+            border-style: dashed !important;
+            transform: scale(1.01);
+        }
+
+        /* Tiny Steps Checkbox Strike-Through */
+        .task-checkbox:checked + span {
+            text-decoration: line-through;
+            color: #9E8C85;
+        }
+
+        /* Cute Modal Pop Entrance */
+        @keyframes modalPop {
+            0% { opacity: 0; transform: scale(0.92) translateY(12px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-enter {
+            animation: modalPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-pastel-sakura selection:text-pastel-sakuraText">
+
+    <!-- Top Cozy Header -->
+    <header class="w-full max-w-[1680px] mx-auto px-6 sm:px-10 pt-8 pb-4">
+        <div class="bg-white/95 backdrop-blur-md rounded-[32px] p-6 sm:p-8 shadow-cozy border-2 border-cream-200 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            
+            <!-- Left: Cute Mascot Badge & Editable Title -->
+            <div class="flex items-center gap-5">
+                <div class="w-16 h-16 rounded-[22px] bg-pastel-sakura border-2 border-pink-200/80 flex items-center justify-center text-3xl shadow-pill shrink-0 select-none">
+                    🌸
+                </div>
+                <div>
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <span id="current-date-pill" class="text-xs font-extrabold px-3.5 py-1 rounded-full bg-pastel-butter text-pastel-butterText border border-amber-200/70">
+                            Sat, Oct 24 ✨
+                        </span>
+                        <span class="text-xs font-extrabold text-pastel-matchaText bg-pastel-matcha px-3.5 py-1 rounded-full flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-pastel-matchaDark animate-pulse"></span>
+                            Cozy Flow Mode 🍵
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-1.5 group">
+                        <h1 id="project-title" contenteditable="true" spellcheck="false" onblur="saveProjectTitle()" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}" class="font-display text-2xl sm:text-3xl font-bold text-cocoa-800 focus:outline-none focus:ring-2 focus:ring-pastel-sakuraDark/40 rounded-xl px-1.5 -ml-1.5 transition" title="Click to rename your cozy board">
+                            My Cozy Little Board 🌸
+                        </h1>
+                        <i class="ph-bold ph-pencil-simple text-cocoa-400 opacity-0 group-hover:opacity-100 transition-opacity text-sm pointer-events-none"></i>
+                    </div>
+                    <p class="text-sm text-cocoa-400 font-semibold mt-0.5">
+                        One tiny step at a time — breathe, sip some tea, and enjoy your day ✨
+                    </p>
+                </div>
+            </div>
+
+            <!-- Middle: Cozy Happiness / Completion Meter -->
+            <div class="w-full lg:w-80 bg-cream-50 rounded-[24px] p-4 sm:px-5 border-2 border-cream-200 flex flex-col justify-center">
+                <div class="flex items-center justify-between text-xs font-extrabold mb-2">
+                    <span class="flex items-center gap-1.5 text-cocoa-600">
+                        <span>🌈</span>
+                        <span>Daily Cozy Progress</span>
+                    </span>
+                    <span id="progress-text" class="text-pastel-sakuraText bg-pastel-sakura px-3 py-0.5 rounded-full text-xs font-extrabold">
+                        0 / 0 Done (0%)
+                    </span>
+                </div>
+                <div class="w-full h-3 bg-cream-200 rounded-full overflow-hidden p-0.5">
+                    <div id="progress-bar-fill" class="h-full bg-gradient-to-r from-pastel-sakuraDark via-pastel-lavenderDark to-pastel-matchaDark rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                </div>
+                <p id="progress-status-note" class="text-xs text-cocoa-400 mt-2 font-bold">
+                    ✨ You're doing amazing sweetie!
+                </p>
+            </div>
+
+            <!-- Right: Cute Action Buttons -->
+            <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+                <button onclick="toggleSound()" id="sound-toggle-btn" title="Toggle cute sound chimes" class="px-4 py-3 rounded-2xl bg-cream-100 hover:bg-pastel-butter text-cocoa-600 transition-all border-2 border-cream-200 shadow-pill flex items-center gap-2 text-xs font-extrabold">
+                    <i id="sound-icon" class="ph-fill ph-speaker-high text-base text-pastel-sakuraDark"></i>
+                    <span class="hidden sm:inline" id="sound-label">Chimes On 🎵</span>
+                </button>
+
+                <button onclick="openResetModal()" title="Restore sample cozy tasks" class="px-4 py-3 rounded-2xl bg-cream-100 hover:bg-pastel-peach text-cocoa-600 transition-all border-2 border-cream-200 shadow-pill flex items-center gap-2 text-xs font-extrabold">
+                    <i class="ph-bold ph-arrow-counter-clockwise text-base"></i>
+                    <span class="hidden sm:inline">Reset Board</span>
+                </button>
+
+                <button onclick="openColumnModal()" class="px-4 py-3 rounded-2xl bg-pastel-lavender hover:bg-purple-200/70 text-pastel-lavenderText font-extrabold text-xs transition-all shadow-pill flex items-center gap-2 border-2 border-purple-200/70">
+                    <i class="ph-bold ph-plus-circle text-base"></i>
+                    <span>+ Column</span>
+                </button>
+
+                <button onclick="openTaskModal()" class="px-5 py-3.5 rounded-2xl bg-pastel-sakuraDark hover:bg-[#f75980] text-white font-extrabold text-xs transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2">
+                    <span class="text-base leading-none">🌸</span>
+                    <span>+ Cute New Task</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search & Pastel Category Filter Bar -->
+    <section class="w-full max-w-[1680px] mx-auto px-6 sm:px-10 py-3">
+        <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white/90 backdrop-blur-sm rounded-[26px] px-6 py-4 border-2 border-cream-200 shadow-cozy">
+            
+            <!-- Search Input -->
+            <div class="relative flex-1 max-w-md">
+                <i class="ph-bold ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-pastel-sakuraDark text-base"></i>
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    oninput="handleSearchAndFilter()"
+                    placeholder="Search cute tasks, notes, or tiny steps... 🔍" 
+                    class="w-full pl-11 pr-10 py-2.5 bg-cream-50 border-2 border-cream-200 rounded-2xl text-sm font-bold text-cocoa-800 placeholder-cocoa-400 focus:outline-none focus:border-pastel-sakuraDark focus:ring-2 focus:ring-pastel-sakura transition-all"
+                >
+                <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-cocoa-400 hover:text-cocoa-800 p-1">
+                    <i class="ph-bold ph-x-circle"></i>
+                </button>
+            </div>
+
+            <!-- Category Filter Pills -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 no-scrollbar" id="category-filter-bar">
+                <!-- Populated dynamically via JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Spacious Pastel Kanban Columns Area (385px wide columns) -->
+    <main class="flex-1 w-full max-w-[1680px] mx-auto px-6 sm:px-10 pt-4 pb-12 overflow-x-auto">
+        <div id="kanban-board" class="flex items-start gap-8 min-h-[640px] pb-6">
+            <!-- Columns rendered dynamically by JS -->
+        </div>
+    </main>
+
+    <!-- Cozy Footer -->
+    <footer class="w-full text-center py-6 text-xs font-bold text-cocoa-400 border-t-2 border-cream-200/80 bg-white/60">
+        <span>Made with love & matcha 🍵 • Drag cards to 'Done 🎉' for pastel confetti celebrations!</span>
+    </footer>
+
+    <!-- ==========================================
+         + CUTE NEW TASK / EDIT TASK MODAL
+    =========================================== -->
+    <div id="task-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-cocoa-800/30 backdrop-blur-sm p-4 overflow-y-auto">
+        <div class="bg-cream-50 border-2 border-cream-200 rounded-[32px] max-w-xl w-full p-6 sm:p-8 shadow-2xl modal-enter my-8 max-h-[92vh] overflow-y-auto">
+            
+            <div class="flex items-center justify-between pb-4 border-b-2 border-cream-200">
+                <div class="flex items-center gap-3.5">
+                    <span id="modal-sticker-preview" class="w-12 h-12 rounded-2xl bg-pastel-sakura flex items-center justify-center text-2xl shadow-pill border border-pink-200">
+                        🌸
+                    </span>
+                    <div>
+                        <h2 id="task-modal-title" class="font-display text-xl font-bold text-cocoa-800">Cute New Task 🌸</h2>
+                        <p class="text-xs text-cocoa-400 font-bold">Pick a sticker badge and break your goal into tiny steps!</p>
+                    </div>
+                </div>
+                <button onclick="closeTaskModal()" class="w-10 h-10 rounded-2xl bg-cream-100 hover:bg-pastel-sakura text-cocoa-600 hover:text-pastel-sakuraText flex items-center justify-center transition-colors">
+                    <i class="ph-bold ph-x text-base"></i>
+                </button>
+            </div>
+
+            <form id="task-form" onsubmit="saveTaskForm(event)" class="space-y-5 mt-5">
+                <input type="hidden" id="task-id-input">
+
+                <!-- Cute Emoji Sticker Badge Picker -->
+                <div>
+                    <label class="block text-xs font-extrabold uppercase tracking-wider text-cocoa-600 mb-2">
+                        Pick a Cute Sticker Badge ✨
+                    </label>
+                    <div id="sticker-picker-grid" class="flex flex-wrap gap-2.5 bg-white p-3.5 rounded-2xl border-2 border-cream-200">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Title -->
+                <div>
+                    <label for="task-title-input" class="block text-xs font-extrabold uppercase tracking-wider text-cocoa-600 mb-1.5">
+                        Task Title *
+                    </label>
+                    <input 
+                        type="text" 
+                        id="task-title-input" 
+                        required
+                        placeholder="e.g., Bake strawberry matcha cupcakes 🍰..." 
+                        class="w-full px-4 py-3 rounded-2xl bg-white border-2 border-cream-200 text-cocoa-800 font-bold text-sm focus:outline-none focus:border-pastel-sakuraDark focus:ring-2 focus:ring-pastel-sakura"
+                    >
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label for="task-desc-input" class="block text-xs font-extrabold uppercase tracking-wider text-cocoa-600 mb-1.5">
+                        Cozy Notes & Details 💭
+                    </label>
+                    <textarea 
+                        id="task-desc-input" 
+                        rows="2"
+                        placeholder="Jot down little reminders, links, or sweet thoughts..." 
+                        class="w-full px-4 py-3 rounded-2xl bg-white border-2 border-cream-200 text-cocoa-800 font-semibold text-sm focus:outline-none focus:border-pastel-sakuraDark focus:ring-2 focus:ring-pastel-sakura resize-none"
+                    ></textarea>
+                </div>
+
+                <!-- Column, Category & Priority Row -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label for="task-column-select" class="block text-xs font-extrabold uppercase tracking-wider text-cocoa-600 mb-1.5">
+                            Column 📋
+                        </label>
+                        <select id="task-column-select" class="w-full px-3.5 py-2.5 rounded-2xl bg-white border-2 border-cream-200 text-cocoa-800 font-bold text-sm focus:outline-none focus:border-pastel-sakuraDark">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="task-category-select" class="block text-xs font-extrabold uppercase tracking-wider text-cocoa-600 mb-1.5">
+                            Vibe / Category 🏷️
+                        </label>
+                        <select id="task-category-select" class="w-full px-3.5 py-2.5 rounded-2xl bg-white border-2 border-cream-200 text-cocoa-800 font-bold text-sm focus:outline-none focus:border-pastel-sakuraDark">
+                            <option value="Creative 🎨">Creative 🎨</option>
+                            <option value="Self-Care 🍵">Self-Care 🍵</option>
+                            <option value="Study & Work 📚">Study & Work 📚</option>
+                            <option value="Cozy Home 🏡">Cozy Home 🏡</option>
+                            <option value="Errands 🧺">Errands 🧺</option>
+                            <option value="Dream Project ✨">Dream Project ✨</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="task-priority-select" class="block text-xs font-extrabold uppercase tracking-wider text-cocoa-600 mb-1.5">
+                            Energy / Priority 🌱
+                        </label>
+                        <select id="task-priority-select" class="w-full px-3.5 py-2.5 rounded-2xl bg-white border-2 border-cream-200 text-cocoa-800 font-bold text-sm focus:outline-none focus:border-pastel-sakuraDark">
+                            <option value="Chill 🌿">Chill 🌿</option>
+                            <option value="Sweet Spot ✨">Sweet Spot ✨</option>
+                            <option value="Top Focus 🌸">Top Focus 🌸</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Due Date -->
+                <div>
+                    <label for="task-due-input" class="block text-xs font-extrabold uppercase tracking-wider text-cocoa-600 mb-1.5">
+                        Sweet Target Date 📅
+                    </label>
+                    <input 
+                        type="date" 
+                        id="task-due-input" 
+                        class="w-full px-4 py-2.5 rounded-2xl bg-white border-2 border-cream-200 text-cocoa-800 font-bold text-sm focus:outline-none focus:border-pastel-sakuraDark"
+                    >
+                </div>
+
+                <!-- "Tiny Steps" Subtasks / Checklist Builder -->
+                <div class="bg-white p-4 rounded-2xl border-2 border-cream-200">
+                    <div class="flex items-center justify-between mb-2.5">
+                        <label class="text-xs font-extrabold uppercase tracking-wider text-cocoa-600 flex items-center gap-1.5">
+                            <span>🐾</span>
+                            <span>Tiny Steps Checklist</span>
+                        </label>
+                        <span id="modal-subtask-counter" class="text-xs font-extrabold text-pastel-sakuraDark bg-pastel-sakura px-2.5 py-0.5 rounded-full">0 steps</span>
+                    </div>
+
+                    <div class="flex gap-2 mb-3">
+                        <input 
+                            type="text" 
+                            id="new-subtask-input" 
+                            onkeydown="if(event.key === 'Enter'){ event.preventDefault(); addSubtaskInModal(); }"
+                            placeholder="Add a tiny step and press Enter..." 
+                            class="flex-1 px-3.5 py-2 rounded-xl bg-cream-50 border-2 border-cream-200 text-sm font-bold text-cocoa-800 focus:outline-none focus:border-pastel-sakuraDark"
+                        >
+                        <button type="button" onclick="addSubtaskInModal()" class="px-4 py-2 rounded-xl bg-pastel-sakura hover:bg-pink-200 text-pastel-sakuraText font-extrabold text-xs transition">
+                            + Add Step
+                        </button>
+                    </div>
+
+                    <ul id="modal-subtask-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                        <!-- Rendered by JS -->
+                    </ul>
+                </div>
+
+                <!-- Modal Footer Buttons -->
+                <div class="flex items-center justify-end gap-3 pt-3 border-t-2 border-cream-200">
+                    <button type="button" onclick="closeTaskModal()" class="px-5 py-2.5 rounded-2xl bg-cream-100 hover:bg-cream-200 text-cocoa-600 font-extrabold text-sm transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 rounded-2xl bg-pastel-sakuraDark hover:bg-[#f75980] text-white font-extrabold text-sm shadow-md transition flex items-center gap-2">
+                        <span>✨</span>
+                        <span>Save Cute Task</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         + COLUMN MODAL
+    =========================================== -->
+    <div id="column-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-cocoa-800/30 backdrop-blur-sm p-4">
+        <div class="bg-cream-50 border-2 border-cream-200 rounded-[32px] max-w-md w-full p-6 sm:p-8 shadow-2xl modal-enter">
+            <div class="flex items-center justify-between pb-4 border-b-2 border-cream-200">
+                <h2 class="font-display text-xl font-bold text-cocoa-800">Add New Pastel Column 🌈</h2>
+                <button onclick="closeColumnModal()" class="w-9 h-9 rounded-2xl bg-cream-100 hover:bg-pastel-sakura text-cocoa-600 flex items-center justify-center">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <form onsubmit="saveColumnForm(event)" class="space-y-4 mt-5">
+                <div>
+                    <label class="block text-xs font-extrabold uppercase tracking-wider text-cocoa-600 mb-1.5">
+                        Column Title (with cute emoji!) *
+                    </label>
+                    <input 
+                        type="text" 
+                        id="col-title-input" 
+                        required
+                        placeholder="e.g., Someday Dreams ☁️" 
+                        class="w-full px-4 py-3 rounded-2xl bg-white border-2 border-cream-200 text-cocoa-800 font-bold text-sm focus:outline-none focus:border-pastel-sakuraDark"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-xs font-extrabold uppercase tracking-wider text-cocoa-600 mb-2">
+                        Pick a Pastel Color Theme 🎨
+                    </label>
+                    <div class="grid grid-cols-3 gap-2.5" id="col-theme-picker">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="colTheme" value="sakura" checked class="sr-only peer">
+                            <div class="p-3 rounded-2xl bg-pastel-sakura text-pastel-sakuraText font-extrabold text-xs text-center border-2 border-transparent peer-checked:border-pastel-sakuraDark">Sakura 🌸</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="colTheme" value="lavender" class="sr-only peer">
+                            <div class="p-3 rounded-2xl bg-pastel-lavender text-pastel-lavenderText font-extrabold text-xs text-center border-2 border-transparent peer-checked:border-pastel-lavenderDark">Lavender ✨</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="colTheme" value="matcha" class="sr-only peer">
+                            <div class="p-3 rounded-2xl bg-pastel-matcha text-pastel-matchaText font-extrabold text-xs text-center border-2 border-transparent peer-checked:border-pastel-matchaDark">Matcha 🍵</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="colTheme" value="peach" class="sr-only peer">
+                            <div class="p-3 rounded-2xl bg-pastel-peach text-pastel-peachText font-extrabold text-xs text-center border-2 border-transparent peer-checked:border-pastel-peachDark">Peach 🍑</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="colTheme" value="butter" class="sr-only peer">
+                            <div class="p-3 rounded-2xl bg-pastel-butter text-pastel-butterText font-extrabold text-xs text-center border-2 border-transparent peer-checked:border-pastel-butterDark">Buttercup 🌼</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="colTheme" value="sky" class="sr-only peer">
+                            <div class="p-3 rounded-2xl bg-pastel-sky text-pastel-skyText font-extrabold text-xs text-center border-2 border-transparent peer-checked:border-pastel-skyDark">Daydream ☁️</div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t-2 border-cream-200">
+                    <button type="button" onclick="closeColumnModal()" class="px-5 py-2.5 rounded-2xl bg-cream-100 text-cocoa-600 font-extrabold text-sm">Cancel</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-2xl bg-pastel-sakuraDark text-white font-extrabold text-sm shadow-md hover:bg-[#f75980]">Create Column ✨</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         CONFIRM RESET / DELETE MODAL (No alert/confirm!)
+    =========================================== -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-cocoa-800/30 backdrop-blur-sm p-4">
+        <div class="bg-cream-50 border-2 border-cream-200 rounded-[30px] max-w-sm w-full p-6 text-center shadow-2xl modal-enter">
+            <div class="w-14 h-14 rounded-2xl bg-pastel-peach text-pastel-peachDark mx-auto flex items-center justify-center text-2xl mb-3 shadow-pill">
+                🧸
+            </div>
+            <h3 id="confirm-modal-title" class="font-display text-lg font-bold text-cocoa-800">Are you sure?</h3>
+            <p id="confirm-modal-desc" class="text-sm text-cocoa-600 font-semibold mt-1 mb-6">Just checking before we make this cozy change!</p>
+            <div class="flex items-center justify-center gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-2xl bg-cream-100 hover:bg-cream-200 text-cocoa-600 font-extrabold text-sm transition">
+                    Keep It
+                </button>
+                <button id="confirm-modal-action-btn" class="flex-1 py-2.5 rounded-2xl bg-pastel-sakuraDark hover:bg-[#f75980] text-white font-extrabold text-sm transition shadow-md">
+                    Yes, Please ✨
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cute Floating Toast Notification -->
+    <div id="workspace-toast" class="fixed bottom-6 right-6 z-50 pointer-events-none opacity-0 translate-y-4 transition-all duration-300">
+        <div class="bg-white border-2 border-pastel-sakuraDark/40 text-cocoa-800 px-5 py-3.5 rounded-2xl shadow-cozy-hover flex items-center gap-3">
+            <span id="toast-icon" class="text-xl">🌸</span>
+            <span id="toast-message" class="text-sm font-extrabold">Task saved with love!</span>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================
+           STATE, CONSTANTS & COZY PASTEL SAMPLE DATA
+        ========================================================== */
+        const STORAGE_KEY = 'cozy_pastel_kanban_v1';
+
+        // Cute Emoji Sticker Badges as requested
+        const STICKER_BADGES = ['🌸', '✨', '🍵', '🍰', '🐾', '🎀', '🌿', '💡', '🎨', '📚'];
+
+        const CATEGORY_STYLES = {
+            'Creative 🎨':      { bg: 'bg-pastel-sakura',   text: 'text-pastel-sakuraText' },
+            'Self-Care 🍵':     { bg: 'bg-pastel-matcha',   text: 'text-pastel-matchaText' },
+            'Study & Work 📚':  { bg: 'bg-pastel-lavender', text: 'text-pastel-lavenderText' },
+            'Cozy Home 🏡':     { bg: 'bg-pastel-peach',    text: 'text-pastel-peachText' },
+            'Errands 🧺':       { bg: 'bg-pastel-butter',   text: 'text-pastel-butterText' },
+            'Dream Project ✨': { bg: 'bg-pastel-sky',      text: 'text-pastel-skyText' }
+        };
+
+        const PRIORITY_STYLES = {
+            'Chill 🌿':      { label: 'Chill 🌿',      classes: 'bg-pastel-matcha text-pastel-matchaText' },
+            'Sweet Spot ✨': { label: 'Sweet Spot ✨', classes: 'bg-pastel-butter text-pastel-butterText' },
+            'Top Focus 🌸':  { label: 'Top Focus 🌸',  classes: 'bg-pastel-sakura text-pastel-sakuraText' }
+        };
+
+        const COLUMN_THEMES = {
+            sakura:   { bg: 'bg-[#FFF3F7]', border: 'border-[#FCD2DF]', badge: 'bg-pastel-sakura text-pastel-sakuraText',     dot: '#FB6F92' },
+            lavender: { bg: 'bg-[#F6F3FF]', border: 'border-[#E0D6FF]', badge: 'bg-pastel-lavender text-pastel-lavenderText', dot: '#8B6FF2' },
+            matcha:   { bg: 'bg-[#F0FAF4]', border: 'border-[#CBEED9]', badge: 'bg-pastel-matcha text-pastel-matchaText',     dot: '#48B878' },
+            peach:    { bg: 'bg-[#FFF5EF]', border: 'border-[#FDD8C2]', badge: 'bg-pastel-peach text-pastel-peachText',       dot: '#F9844A' },
+            butter:   { bg: 'bg-[#FFFBEF]', border: 'border-[#FBE7B2]', badge: 'bg-pastel-butter text-pastel-butterText',     dot: '#F4B942' },
+            sky:      { bg: 'bg-[#F2F9FF]', border: 'border-[#CBE5FC]', badge: 'bg-pastel-sky text-pastel-skyText',           dot: '#4EA8DE' }
+        };
+
+        const DEFAULT_BOARD_DATA = {
+            projectTitle: 'My Cozy Little Board 🌸',
+            columns: [
+                { id: 'col-todo',     title: 'To Do 🌸',       theme: 'sakura',   isDoneColumn: false },
+                { id: 'col-progress', title: 'In Progress ✨', theme: 'lavender', isDoneColumn: false },
+                { id: 'col-review',   title: 'Review 🍵',      theme: 'peach',    isDoneColumn: false },
+                { id: 'col-done',     title: 'Done 🎉',        theme: 'matcha',   isDoneColumn: true  }
+            ],
+            tasks: [
+                {
+                    id: 'task-1',
+                    columnId: 'col-todo',
+                    title: 'Paint watercolor botanical postcards 🎨',
+                    description: 'Create a set of 4 pastel floral thank-you cards for pen pals on cotton paper.',
+                    category: 'Creative 🎨',
+                    priority: 'Sweet Spot ✨',
+                    sticker: '🎨',
+                    dueDate: '2026-10-26',
+                    subtasks: [
+                        { id: 's-1', text: 'Sketch light pencil outlines of sakura & lavender', done: true },
+                        { id: 's-2', text: 'Paint soft pastel washes for the petals', done: false },
+                        { id: 's-3', text: 'Add fine ink details & gold shimmer accents', done: false }
+                    ]
+                },
+                {
+                    id: 'task-2',
+                    columnId: 'col-todo',
+                    title: 'Bake strawberry cream roll cake 🍰',
+                    description: 'Try the fluffy Japanese sponge recipe with fresh whipped cream and diced strawberries.',
+                    category: 'Cozy Home 🏡',
+                    priority: 'Chill 🌿',
+                    sticker: '🍰',
+                    dueDate: '2026-10-28',
+                    subtasks: [
+                        { id: 's-4', text: 'Pick up fresh strawberries & heavy cream', done: true },
+                        { id: 's-5', text: 'Whisk meringue to soft glossy peaks', done: false }
+                    ]
+                },
+                {
+                    id: 'task-3',
+                    columnId: 'col-progress',
+                    title: 'Refresh desk corner & digital journal setup ✨',
+                    description: 'Organize stationery drawer, water the pothos plant, and set up November habit tracker.',
+                    category: 'Dream Project ✨',
+                    priority: 'Top Focus 🌸',
+                    sticker: '🎀',
+                    dueDate: '2026-10-25',
+                    subtasks: [
+                        { id: 's-6', text: 'Sort washi tapes by pastel rainbow colors', done: true },
+                        { id: 's-7', text: 'Mist desk plants and wipe monitor stand', done: true },
+                        { id: 's-8', text: 'Import cute sticker pack into planner tablet', done: false }
+                    ]
+                },
+                {
+                    id: 'task-4',
+                    columnId: 'col-progress',
+                    title: 'Read 2 chapters of cozy fantasy novel 📚',
+                    description: 'Curl up by the window with a warm oat milk latte and annotate favorite quotes.',
+                    category: 'Self-Care 🍵',
+                    priority: 'Chill 🌿',
+                    sticker: '📚',
+                    dueDate: '2026-10-25',
+                    subtasks: [
+                        { id: 's-9', text: 'Brew warm vanilla oat latte', done: true },
+                        { id: 's-10', text: 'Read Chapter 7 & Chapter 8', done: false }
+                    ]
+                },
+                {
+                    id: 'task-5',
+                    columnId: 'col-review',
+                    title: 'Finish UI portfolio case study layout 💡',
+                    description: 'Check mobile spacing, pastel color contrast, and proofread the project story.',
+                    category: 'Study & Work 📚',
+                    priority: 'Top Focus 🌸',
+                    sticker: '💡',
+                    dueDate: '2026-10-25',
+                    subtasks: [
+                        { id: 's-11', text: 'Export high-res mockups with rounded frames', done: true },
+                        { id: 's-12', text: 'Do a final cozy read-through of headings', done: true }
+                    ]
+                },
+                {
+                    id: 'task-6',
+                    columnId: 'col-done',
+                    title: 'Morning matcha ritual & 15-min stretch 🍵',
+                    description: 'Started the morning gently with ceremonial iced matcha and sunshine stretches!',
+                    category: 'Self-Care 🍵',
+                    priority: 'Sweet Spot ✨',
+                    sticker: '🍵',
+                    dueDate: '2026-10-24',
+                    subtasks: [
+                        { id: 's-13', text: 'Whisk warm matcha with bamboo chasen', done: true },
+                        { id: 's-14', text: '15-minute gentle shoulder & back flow', done: true }
+                    ]
+                }
+            ]
+        };
+
+        let boardState = { projectTitle: 'My Cozy Little Board 🌸', columns: [], tasks: [] };
+        let activeCategoryFilter = 'All ✨';
+        let searchQuery = '';
+        let selectedModalSticker = '🌸';
+        let modalSubtasks = [];
+        let draggedTaskId = null;
+        let soundEnabled = true;
+
+        /* ==========================================================
+           GENTLE WEB AUDIO SYNTHESIZER (Cozy Chimes)
+        ========================================================== */
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) audioCtx = new AudioContextClass();
+            }
+            return audioCtx;
+        }
+
+        function playCozyChime(type) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                if (ctx.state === 'suspended') ctx.resume();
+
+                const now = ctx.currentTime;
+                if (type === 'pop') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(520, now);
+                    osc.frequency.exponentialRampToValueAtTime(780, now + 0.07);
+                    gain.gain.setValueAtTime(0.07, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'celebrate') {
+                    // Sweet music-box arpeggio (C5 - E5 - G5 - C6)
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.075);
+                        gain.gain.setValueAtTime(0.09, now + idx * 0.075);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.075 + 0.28);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + idx * 0.075);
+                        osc.stop(now + idx * 0.075 + 0.3);
+                    });
+                }
+            } catch (e) {
+                // Ignore if audio context is blocked
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            const label = document.getElementById('sound-label');
+            if (soundEnabled) {
+                icon.className = 'ph-fill ph-speaker-high text-base text-pastel-sakuraDark';
+                label.textContent = 'Chimes On 🎵';
+                playCozyChime('pop');
+            } else {
+                icon.className = 'ph-bold ph-speaker-slash text-base text-cocoa-400';
+                label.textContent = 'Muted 🤫';
+            }
+        }
+
+        /* ==========================================================
+           INITIALIZATION & LOCALSTORAGE
+        ========================================================== */
+        function initApp() {
+            loadState();
+            updateDateDisplay();
+            renderCategoryFilterBar();
+            renderStickerPicker();
+            renderBoard();
+        }
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && Array.isArray(parsed.columns) && Array.isArray(parsed.tasks)) {
+                        boardState = parsed;
+                        document.getElementById('project-title').textContent = boardState.projectTitle || 'My Cozy Little Board 🌸';
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn('Could not read from localStorage, using cozy defaults.', err);
+            }
+            boardState = JSON.parse(JSON.stringify(DEFAULT_BOARD_DATA));
+            document.getElementById('project-title').textContent = boardState.projectTitle;
+            saveState();
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(boardState));
+            } catch (err) {
+                console.warn('Could not save state to localStorage.', err);
+            }
+            updateHeaderProgress();
+        }
+
+        function saveProjectTitle() {
+            const el = document.getElementById('project-title');
+            const val = el.textContent.trim();
+            boardState.projectTitle = val || 'My Cozy Little Board 🌸';
+            el.textContent = boardState.projectTitle;
+            saveState();
+            showCozyToast('Board title saved! 🌸', '🎀');
+        }
+
+        function updateDateDisplay() {
+            const now = new Date();
+            const options = { weekday: 'short', month: 'short', day: 'numeric' };
+            document.getElementById('current-date-pill').textContent = `${now.toLocaleDateString('en-US', options)} ✨`;
+        }
+
+        /* ==========================================================
+           CATEGORY FILTER & SEARCH
+        ========================================================== */
+        function renderCategoryFilterBar() {
+            const bar = document.getElementById('category-filter-bar');
+            const categories = ['All ✨', ...Object.keys(CATEGORY_STYLES)];
+
+            bar.innerHTML = categories.map(cat => {
+                const isActive = activeCategoryFilter === cat;
+                const activeClasses = isActive
+                    ? 'bg-pastel-sakuraDark text-white shadow-sm'
+                    : 'bg-cream-100 hover:bg-pastel-sakura/60 text-cocoa-600';
+
+                return `
+                    <button 
+                        onclick="setCategoryFilter('${cat}')"
+                        class="px-4 py-2 rounded-2xl text-xs font-extrabold transition-all whitespace-nowrap ${activeClasses}"
+                    >
+                        ${cat}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function setCategoryFilter(cat) {
+            activeCategoryFilter = cat;
+            playCozyChime('pop');
+            renderCategoryFilterBar();
+            renderBoard();
+        }
+
+        function handleSearchAndFilter() {
+            const input = document.getElementById('search-input');
+            searchQuery = input.value.trim().toLowerCase();
+            const clearBtn = document.getElementById('clear-search-btn');
+            if (searchQuery.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+            renderBoard();
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('search-input');
+            input.value = '';
+            searchQuery = '';
+            document.getElementById('clear-search-btn').classList.add('hidden');
+            renderBoard();
+        }
+
+        /* ==========================================================
+           BOARD & CARD RENDERING
+        ========================================================== */
+        function isDoneColumnCheck(column) {
+            if (!column) return false;
+            const t = column.title.toLowerCase();
+            return Boolean(column.isDoneColumn) || column.id === 'col-done' || t.includes('done') || t.includes('🎉');
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('kanban-board');
+            boardEl.innerHTML = '';
+
+            boardState.columns.forEach(col => {
+                const theme = COLUMN_THEMES[col.theme] || COLUMN_THEMES.sakura;
+
+                // Filter tasks for this column
+                const colTasks = boardState.tasks.filter(t => {
+                    if (t.columnId !== col.id) return false;
+                    if (activeCategoryFilter !== 'All ✨' && t.category !== activeCategoryFilter) return false;
+                    if (searchQuery) {
+                        const matchTitle = t.title.toLowerCase().includes(searchQuery);
+                        const matchDesc = (t.description || '').toLowerCase().includes(searchQuery);
+                        const matchCat = (t.category || '').toLowerCase().includes(searchQuery);
+                        const matchSub = (t.subtasks || []).some(s => s.text.toLowerCase().includes(searchQuery));
+                        return matchTitle || matchDesc || matchCat || matchSub;
+                    }
+                    return true;
+                });
+
+                const colEl = document.createElement('div');
+                colEl.className = `column-dropzone w-[360px] sm:w-[385px] shrink-0 rounded-[32px] p-6 ${theme.bg} border-2 ${theme.border} shadow-cozy flex flex-col max-h-[780px]`;
+                colEl.dataset.columnId = col.id;
+
+                // Drag events on column
+                colEl.addEventListener('dragover', handleDragOver);
+                colEl.addEventListener('dragenter', handleDragEnter);
+                colEl.addEventListener('dragleave', handleDragLeave);
+                colEl.addEventListener('drop', (e) => handleDrop(e, col.id));
+
+                const canDeleteCol = boardState.columns.length > 1;
+                colEl.innerHTML = `
+                    <div class="flex items-center justify-between mb-5 px-1">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-3 h-3 rounded-full shrink-0" style="background-color: ${theme.dot}"></span>
+                            <h2 class="font-display font-bold text-lg text-cocoa-800">${escapeHtml(col.title)}</h2>
+                            <span class="px-3 py-0.5 rounded-full text-xs font-extrabold ${theme.badge} shadow-pill">
+                                ${colTasks.length}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="openTaskModal(null, '${col.id}')" title="Add cute task to ${escapeHtml(col.title)}" class="w-8 h-8 rounded-xl bg-white/90 hover:bg-white text-cocoa-600 hover:text-pastel-sakuraDark flex items-center justify-center transition shadow-pill">
+                                <i class="ph-bold ph-plus text-sm"></i>
+                            </button>
+                            ${canDeleteCol ? `
+                            <button onclick="confirmDeleteColumn('${col.id}')" title="Delete column" class="w-8 h-8 rounded-xl bg-white/60 hover:bg-pastel-sakura text-cocoa-400 hover:text-pastel-sakuraText flex items-center justify-center transition">
+                                <i class="ph-bold ph-trash text-sm"></i>
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Cards Container with generous spacing -->
+                    <div class="flex-1 overflow-y-auto space-y-5 pr-1 pb-2 min-h-[220px]" id="cards-wrap-${col.id}">
+                        ${colTasks.length === 0 ? `
+                            <div class="h-44 rounded-[24px] border-2 border-dashed border-cocoa-400/25 bg-white/60 flex flex-col items-center justify-center p-6 text-center select-none">
+                                <span class="text-2xl mb-1">☁️</span>
+                                <p class="text-xs font-extrabold text-cocoa-600">All clear & peaceful here!</p>
+                                <p class="text-[11px] font-semibold text-cocoa-400 mt-0.5">Drop a cute card here or add a new one below</p>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Spacious Bottom Add Button -->
+                    <button 
+                        onclick="openTaskModal(null, '${col.id}')"
+                        class="mt-4 w-full py-3 rounded-2xl bg-white/90 hover:bg-white text-cocoa-600 hover:text-pastel-sakuraDark font-extrabold text-xs border-2 border-white transition-all shadow-pill flex items-center justify-center gap-2 group"
+                    >
+                        <span class="group-hover:scale-125 transition-transform">🌸</span>
+                        <span>+ Cute New Task</span>
+                    </button>
+                `;
+
+                const cardsContainer = colEl.querySelector(`#cards-wrap-${col.id}`);
+                colTasks.forEach(task => {
+                    const cardEl = createTaskCardElement(task, isDoneColumnCheck(col));
+                    cardsContainer.appendChild(cardEl);
+                });
+
+                boardEl.appendChild(colEl);
+            });
+
+            updateHeaderProgress();
+        }
+
+        function createTaskCardElement(task, isDoneCol) {
+            const card = document.createElement('div');
+            card.className = `task-card bg-white rounded-[26px] p-5 sm:p-6 shadow-cozy hover:shadow-cozy-hover border-2 border-cream-200 cursor-grab active:cursor-grabbing select-none relative group ${isDoneCol ? 'opacity-90 bg-white/95' : ''}`;
+            card.draggable = true;
+            card.dataset.taskId = task.id;
+
+            card.addEventListener('dragstart', (e) => handleDragStart(e, task.id, card));
+            card.addEventListener('dragend', () => handleDragEnd(card));
+
+            const catStyle = CATEGORY_STYLES[task.category] || CATEGORY_STYLES['Creative 🎨'];
+            const prioStyle = PRIORITY_STYLES[task.priority] || PRIORITY_STYLES['Sweet Spot ✨'];
+            const sticker = task.sticker || '🌸';
+
+            const subtasks = task.subtasks || [];
+            const totalSub = subtasks.length;
+            const doneSub = subtasks.filter(s => s.done).length;
+            const subPercent = totalSub > 0 ? Math.round((doneSub / totalSub) * 100) : 0;
+
+            const formattedDue = formatDisplayDate(task.dueDate);
+
+            card.innerHTML = `
+                <!-- Top Row: Emoji Sticker Badge + Category & Priority Pills + Edit/Delete Actions -->
+                <div class="flex items-start justify-between gap-2 mb-3.5">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="w-10 h-10 rounded-2xl ${catStyle.bg} flex items-center justify-center text-xl shadow-pill shrink-0">
+                            ${escapeHtml(sticker)}
+                        </span>
+                        <span class="px-3 py-1 rounded-full text-xs font-extrabold ${catStyle.bg} ${catStyle.text}">
+                            ${escapeHtml(task.category)}
+                        </span>
+                        <span class="px-3 py-1 rounded-full text-xs font-extrabold ${prioStyle.classes}">
+                            ${escapeHtml(prioStyle.label)}
+                        </span>
+                    </div>
+
+                    <!-- Quick Card Actions -->
+                    <div class="flex items-center gap-1 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button onclick="openTaskModal('${task.id}')" title="Edit cute task" class="w-8 h-8 rounded-xl bg-cream-100 hover:bg-pastel-lavender text-cocoa-600 hover:text-pastel-lavenderText flex items-center justify-center transition">
+                            <i class="ph-bold ph-pencil-simple text-sm"></i>
+                        </button>
+                        <button onclick="confirmDeleteTask('${task.id}')" title="Delete task" class="w-8 h-8 rounded-xl bg-cream-100 hover:bg-pastel-sakura text-cocoa-600 hover:text-pastel-sakuraText flex items-center justify-center transition">
+                            <i class="ph-bold ph-trash text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Task Title & Description -->
+                <div class="mb-4">
+                    <h3 class="font-display font-bold text-base sm:text-[17px] text-cocoa-800 leading-snug ${isDoneCol ? 'line-through text-cocoa-400' : ''}">
+                        ${escapeHtml(task.title)}
+                    </h3>
+                    ${task.description ? `
+                        <p class="text-xs sm:text-[13px] font-semibold text-cocoa-600/90 mt-1.5 leading-relaxed">
+                            ${escapeHtml(task.description)}
+                        </p>
+                    ` : ''}
+                </div>
+
+                <!-- "Tiny Steps" Interactive Checklist & Live Progress Bar -->
+                ${totalSub > 0 ? `
+                    <div class="bg-cream-50 rounded-2xl p-3.5 border-2 border-cream-200 mb-4">
+                        <div class="flex items-center justify-between text-xs font-extrabold text-cocoa-600 mb-1.5">
+                            <span class="flex items-center gap-1.5">
+                                <span>🐾</span>
+                                <span>Tiny Steps</span>
+                            </span>
+                            <span class="text-pastel-sakuraText">${doneSub}/${totalSub} (${subPercent}%)</span>
+                        </div>
+                        <div class="w-full h-2 bg-cream-200 rounded-full overflow-hidden mb-2.5">
+                            <div class="h-full bg-gradient-to-r from-pastel-sakuraDark to-pastel-matchaDark rounded-full transition-all duration-300" style="width: ${subPercent}%"></div>
+                        </div>
+                        <div class="space-y-1.5">
+                            ${subtasks.map(sub => `
+                                <label class="flex items-start gap-2.5 text-xs font-bold text-cocoa-800 cursor-pointer hover:bg-white/90 p-1.5 rounded-xl transition">
+                                    <input 
+                                        type="checkbox" 
+                                        ${sub.done ? 'checked' : ''} 
+                                        onchange="toggleSubtaskOnCard('${task.id}', '${sub.id}')"
+                                        class="task-checkbox mt-0.5 w-4 h-4 rounded accent-[#FB6F92] cursor-pointer shrink-0"
+                                    >
+                                    <span class="leading-tight">${escapeHtml(sub.text)}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Card Footer: Due Date & Quick 'Done 🎉' Button -->
+                <div class="flex items-center justify-between pt-2.5 border-t-2 border-cream-100 text-xs font-bold text-cocoa-400">
+                    <div class="flex items-center gap-1.5">
+                        <span>📅</span>
+                        <span>${formattedDue}</span>
+                    </div>
+
+                    ${!isDoneCol ? `
+                        <button 
+                            onclick="quickMoveToDone('${task.id}')" 
+                            title="Celebrate & move to Done 🎉"
+                            class="px-3.5 py-1.5 rounded-xl bg-pastel-matcha hover:bg-emerald-200/80 text-pastel-matchaText font-extrabold text-xs transition flex items-center gap-1 shadow-pill"
+                        >
+                            <span>Done 🎉</span>
+                        </button>
+                    ` : `
+                        <span class="px-3 py-1 rounded-xl bg-pastel-matcha text-pastel-matchaText font-extrabold text-xs flex items-center gap-1">
+                            <span>Yay! Done 🎉</span>
+                        </span>
+                    `}
+                </div>
+            `;
+
+            return card;
+        }
+
+        function toggleSubtaskOnCard(taskId, subtaskId) {
+            const task = boardState.tasks.find(t => t.id === taskId);
+            if (!task || !task.subtasks) return;
+            const sub = task.subtasks.find(s => s.id === subtaskId);
+            if (!sub) return;
+
+            sub.done = !sub.done;
+            playCozyChime('pop');
+            saveState();
+            renderBoard();
+        }
+
+        function quickMoveToDone(taskId) {
+            const task = boardState.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            let doneCol = boardState.columns.find(c => isDoneColumnCheck(c));
+            if (!doneCol) {
+                doneCol = boardState.columns[boardState.columns.length - 1];
+            }
+
+            if (task.columnId !== doneCol.id) {
+                task.columnId = doneCol.id;
+                if (task.subtasks) {
+                    task.subtasks.forEach(s => s.done = true);
+                }
+                saveState();
+                renderBoard();
+                triggerTaskCelebration(task.title);
+            }
+        }
+
+        /* ==========================================================
+           DRAG AND DROP HANDLERS
+        ========================================================== */
+        function handleDragStart(e, taskId, cardEl) {
+            draggedTaskId = taskId;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', taskId);
+            setTimeout(() => {
+                cardEl.classList.add('dragging');
+            }, 0);
+        }
+
+        function handleDragEnd(cardEl) {
+            cardEl.classList.remove('dragging');
+            document.querySelectorAll('.column-dropzone').forEach(col => {
+                col.classList.remove('drag-over');
+            });
+            draggedTaskId = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            const col = e.currentTarget;
+            col.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            const col = e.currentTarget;
+            if (!col.contains(e.relatedTarget)) {
+                col.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e, targetColumnId) {
+            e.preventDefault();
+            const colEl = e.currentTarget;
+            colEl.classList.remove('drag-over');
+
+            const taskId = draggedTaskId || e.dataTransfer.getData('text/plain');
+            if (!taskId) return;
+
+            const task = boardState.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            const prevColumnId = task.columnId;
+            if (prevColumnId === targetColumnId) return;
+
+            task.columnId = targetColumnId;
+            const targetCol = boardState.columns.find(c => c.id === targetColumnId);
+
+            saveState();
+            renderBoard();
+
+            if (isDoneColumnCheck(targetCol)) {
+                triggerTaskCelebration(task.title);
+            } else {
+                playCozyChime('pop');
+                showCozyToast(`Moved to ${targetCol ? targetCol.title : 'column'}`, '✨');
+            }
+        }
+
+        /* ==========================================================
+           PASTEL CONFETTI CELEBRATION & PROGRESS METER
+        ========================================================== */
+        function triggerTaskCelebration(taskTitle) {
+            playCozyChime('celebrate');
+            showCozyToast(`Yay! Completed "${truncateText(taskTitle, 26)}" 🎉`, '🎉');
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 65,
+                    spread: 70,
+                    origin: { y: 0.68 },
+                    colors: ['#FFB5C2', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFF1A8']
+                });
+            }
+        }
+
+        function updateHeaderProgress() {
+            const totalTasks = boardState.tasks.length;
+            const doneColIds = boardState.columns.filter(c => isDoneColumnCheck(c)).map(c => c.id);
+            const doneTasks = boardState.tasks.filter(t => doneColIds.includes(t.columnId)).length;
+            const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+            document.getElementById('progress-text').textContent = `${doneTasks} / ${totalTasks} Done (${pct}%)`;
+            document.getElementById('progress-bar-fill').style.width = `${pct}%`;
+
+            const msgEl = document.getElementById('progress-status-note');
+            if (totalTasks === 0) {
+                msgEl.textContent = '🌸 Add a cute task to begin your cozy day!';
+            } else if (pct === 100) {
+                msgEl.textContent = '🎉 Everything is done! Time for a sweet treat & tea!';
+            } else if (pct >= 50) {
+                msgEl.textContent = '✨ Over halfway there — you are doing so wonderfully!';
+            } else {
+                msgEl.textContent = '🍵 Take your time, every tiny step counts!';
+            }
+        }
+
+        /* ==========================================================
+           ADD / EDIT TASK MODAL LOGIC
+        ========================================================== */
+        function renderStickerPicker() {
+            const grid = document.getElementById('sticker-picker-grid');
+            grid.innerHTML = STICKER_BADGES.map(emoji => {
+                const isSelected = emoji === selectedModalSticker;
+                return `
+                    <button 
+                        type="button"
+                        onclick="selectModalSticker('${emoji}')"
+                        class="w-11 h-11 rounded-2xl text-xl flex items-center justify-center transition-all ${isSelected ? 'bg-pastel-sakura border-2 border-pastel-sakuraDark scale-110 shadow-pill' : 'bg-cream-50 hover:bg-cream-100 border-2 border-transparent'}"
+                    >
+                        ${emoji}
+                    </button>
+                `;
+            }).join('');
+            document.getElementById('modal-sticker-preview').textContent = selectedModalSticker;
+        }
+
+        function selectModalSticker(emoji) {
+            selectedModalSticker = emoji;
+            playCozyChime('pop');
+            renderStickerPicker();
+        }
+
+        function populateColumnSelect(selectedColId) {
+            const select = document.getElementById('task-column-select');
+            select.innerHTML = boardState.columns.map(col => `
+                <option value="${col.id}" ${col.id === selectedColId ? 'selected' : ''}>
+                    ${escapeHtml(col.title)}
+                </option>
+            `).join('');
+        }
+
+        function openTaskModal(taskId = null, defaultColumnId = null) {
+            const modal = document.getElementById('task-modal');
+            const titleHeader = document.getElementById('task-modal-title');
+            const idInput = document.getElementById('task-id-input');
+            const titleInput = document.getElementById('task-title-input');
+            const descInput = document.getElementById('task-desc-input');
+            const catSelect = document.getElementById('task-category-select');
+            const prioSelect = document.getElementById('task-priority-select');
+            const dueInput = document.getElementById('task-due-input');
+
+            if (taskId) {
+                const task = boardState.tasks.find(t => t.id === taskId);
+                if (!task) return;
+                titleHeader.textContent = 'Edit Cute Task 🌸';
+                idInput.value = task.id;
+                titleInput.value = task.title;
+                descInput.value = task.description || '';
+                catSelect.value = task.category || 'Creative 🎨';
+                prioSelect.value = task.priority || 'Sweet Spot ✨';
+                dueInput.value = task.dueDate || '';
+                selectedModalSticker = task.sticker || '🌸';
+                modalSubtasks = JSON.parse(JSON.stringify(task.subtasks || []));
+                populateColumnSelect(task.columnId);
+            } else {
+                titleHeader.textContent = 'Cute New Task 🌸';
+                idInput.value = '';
+                titleInput.value = '';
+                descInput.value = '';
+                catSelect.value = 'Creative 🎨';
+                prioSelect.value = 'Sweet Spot ✨';
+                dueInput.value = new Date().toISOString().split('T')[0];
+                selectedModalSticker = '🌸';
+                modalSubtasks = [];
+                const targetCol = defaultColumnId || (boardState.columns[0] && boardState.columns[0].id);
+                populateColumnSelect(targetCol);
+            }
+
+            renderStickerPicker();
+            renderModalSubtasks();
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => titleInput.focus(), 80);
+        }
+
+        function closeTaskModal() {
+            const modal = document.getElementById('task-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function addSubtaskInModal() {
+            const input = document.getElementById('new-subtask-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            modalSubtasks.push({
+                id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+                text,
+                done: false
+            });
+            input.value = '';
+            playCozyChime('pop');
+            renderModalSubtasks();
+        }
+
+        function removeSubtaskInModal(subId) {
+            modalSubtasks = modalSubtasks.filter(s => s.id !== subId);
+            renderModalSubtasks();
+        }
+
+        function toggleSubtaskInModal(subId) {
+            const sub = modalSubtasks.find(s => s.id === subId);
+            if (sub) sub.done = !sub.done;
+            renderModalSubtasks();
+        }
+
+        function renderModalSubtasks() {
+            const list = document.getElementById('modal-subtask-list');
+            const counter = document.getElementById('modal-subtask-counter');
+            counter.textContent = `${modalSubtasks.length} ${modalSubtasks.length === 1 ? 'tiny step' : 'tiny steps'}`;
+
+            if (modalSubtasks.length === 0) {
+                list.innerHTML = `<li class="text-xs text-cocoa-400 font-semibold italic py-1">No tiny steps added yet — add one above! 🐾</li>`;
+                return;
+            }
+
+            list.innerHTML = modalSubtasks.map(sub => `
+                <li class="flex items-center justify-between gap-2 bg-cream-50 px-3.5 py-2 rounded-xl border border-cream-200">
+                    <label class="flex items-center gap-2 text-xs font-bold text-cocoa-800 cursor-pointer flex-1">
+                        <input type="checkbox" ${sub.done ? 'checked' : ''} onchange="toggleSubtaskInModal('${sub.id}')" class="accent-[#FB6F92] rounded">
+                        <span class="${sub.done ? 'line-through text-cocoa-400' : ''}">${escapeHtml(sub.text)}</span>
+                    </label>
+                    <button type="button" onclick="removeSubtaskInModal('${sub.id}')" class="text-cocoa-400 hover:text-pastel-sakuraDark">
+                        <i class="ph-bold ph-x text-xs"></i>
+                    </button>
+                </li>
+            `).join('');
+        }
+
+        function saveTaskForm(e) {
+            e.preventDefault();
+            const id = document.getElementById('task-id-input').value;
+            const title = document.getElementById('task-title-input').value.trim();
+            if (!title) return;
+
+            const description = document.getElementById('task-desc-input').value.trim();
+            const columnId = document.getElementById('task-column-select').value;
+            const category = document.getElementById('task-category-select').value;
+            const priority = document.getElementById('task-priority-select').value;
+            const dueDate = document.getElementById('task-due-input').value;
+
+            const targetCol = boardState.columns.find(c => c.id === columnId);
+
+            if (id) {
+                const existing = boardState.tasks.find(t => t.id === id);
+                if (existing) {
+                    const wasDone = isDoneColumnCheck(boardState.columns.find(c => c.id === existing.columnId));
+                    existing.title = title;
+                    existing.description = description;
+                    existing.columnId = columnId;
+                    existing.category = category;
+                    existing.priority = priority;
+                    existing.dueDate = dueDate;
+                    existing.sticker = selectedModalSticker;
+                    existing.subtasks = modalSubtasks;
+
+                    if (!wasDone && isDoneColumnCheck(targetCol)) {
+                        triggerTaskCelebration(title);
+                    } else {
+                        playCozyChime('pop');
+                        showCozyToast('Cute task updated! ✨', selectedModalSticker);
+                    }
+                }
+            } else {
+                const newTask = {
+                    id: 'task-' + Date.now(),
+                    columnId,
+                    title,
+                    description,
+                    category,
+                    priority,
+                    sticker: selectedModalSticker,
+                    dueDate,
+                    subtasks: modalSubtasks
+                };
+                boardState.tasks.unshift(newTask);
+
+                if (isDoneColumnCheck(targetCol)) {
+                    triggerTaskCelebration(title);
+                } else {
+                    playCozyChime('pop');
+                    showCozyToast('New cute task added! 🌸', selectedModalSticker);
+                }
+            }
+
+            saveState();
+            renderBoard();
+            closeTaskModal();
+        }
+
+        /* ==========================================================
+           + COLUMN MODAL LOGIC
+        ========================================================== */
+        function openColumnModal() {
+            document.getElementById('col-title-input').value = '';
+            const modal = document.getElementById('column-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => document.getElementById('col-title-input').focus(), 80);
+        }
+
+        function closeColumnModal() {
+            const modal = document.getElementById('column-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveColumnForm(e) {
+            e.preventDefault();
+            const title = document.getElementById('col-title-input').value.trim();
+            if (!title) return;
+
+            const themeRadio = document.querySelector('input[name="colTheme"]:checked');
+            const theme = themeRadio ? themeRadio.value : 'sakura';
+
+            boardState.columns.push({
+                id: 'col-' + Date.now(),
+                title,
+                theme,
+                isDoneColumn: title.toLowerCase().includes('done') || title.includes('🎉')
+            });
+
+            playCozyChime('pop');
+            saveState();
+            renderBoard();
+            closeColumnModal();
+            showCozyToast(`Column "${title}" created! 🌈`, '✨');
+        }
+
+        /* ==========================================================
+           CONFIRMATION MODAL (Deleting Tasks, Columns, Resetting)
+        ========================================================== */
+        function openConfirmModal({ title, desc, confirmText, onConfirm }) {
+            document.getElementById('confirm-modal-title').textContent = title;
+            document.getElementById('confirm-modal-desc').textContent = desc;
+            const btn = document.getElementById('confirm-modal-action-btn');
+            btn.textContent = confirmText || 'Yes, Please ✨';
+            btn.onclick = () => {
+                onConfirm();
+                closeConfirmModal();
+            };
+
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function confirmDeleteTask(taskId) {
+            const task = boardState.tasks.find(t => t.id === taskId);
+            if (!task) return;
+            openConfirmModal({
+                title: 'Remove this cute task? 🌸',
+                desc: `"${task.title}" will float away from your board.`,
+                confirmText: 'Remove Task',
+                onConfirm: () => {
+                    boardState.tasks = boardState.tasks.filter(t => t.id !== taskId);
+                    playCozyChime('pop');
+                    saveState();
+                    renderBoard();
+                    showCozyToast('Task removed! 🍃', '🍃');
+                }
+            });
+        }
+
+        function confirmDeleteColumn(colId) {
+            const col = boardState.columns.find(c => c.id === colId);
+            if (!col) return;
+            openConfirmModal({
+                title: `Remove "${col.title}"?`,
+                desc: 'All cute cards inside this column will also be removed.',
+                confirmText: 'Remove Column',
+                onConfirm: () => {
+                    boardState.columns = boardState.columns.filter(c => c.id !== colId);
+                    boardState.tasks = boardState.tasks.filter(t => t.columnId !== colId);
+                    playCozyChime('pop');
+                    saveState();
+                    renderBoard();
+                    showCozyToast('Column removed! ✨', '☁️');
+                }
+            });
+        }
+
+        function openResetModal() {
+            openConfirmModal({
+                title: 'Reset Cozy Board? 🧸',
+                desc: 'This will restore the original pastel columns and sample cozy tasks.',
+                confirmText: 'Reset Board 🌸',
+                onConfirm: () => {
+                    boardState = JSON.parse(JSON.stringify(DEFAULT_BOARD_DATA));
+                    document.getElementById('project-title').textContent = boardState.projectTitle;
+                    activeCategoryFilter = 'All ✨';
+                    clearSearch();
+                    saveState();
+                    renderCategoryFilterBar();
+                    renderBoard();
+                    playCozyChime('celebrate');
+                    showCozyToast('Fresh cozy board restored! 🌸', '🌸');
+                }
+            });
+        }
+
+        /* ==========================================================
+           HELPERS & TOAST
+        ========================================================== */
+        let toastTimeout = null;
+        function showCozyToast(message, emoji = '🌸') {
+            const toast = document.getElementById('workspace-toast');
+            document.getElementById('toast-message').textContent = message;
+            document.getElementById('toast-icon').textContent = emoji;
+
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 2600);
+        }
+
+        function formatDisplayDate(dateStr) {
+            if (!dateStr) return 'Whenever cozy ☁️';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            if (isNaN(date.getTime())) return dateStr;
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function truncateText(str, max) {
+            if (!str) return '';
+            return str.length > max ? str.substring(0, max) + '…' : str;
+        }
+
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Start app when window loads
+        window.onload = initApp;
+    </script>
+</body>
+</html>
